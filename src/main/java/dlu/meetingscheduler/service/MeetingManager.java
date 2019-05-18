@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public class MeetingManager {
 
+    // check if the meeting is inside the office hour
     public boolean isValidMeeting(Meeting meeting, OfficeHour officeHour) {
 
         Objects.requireNonNull(meeting, "meeting");

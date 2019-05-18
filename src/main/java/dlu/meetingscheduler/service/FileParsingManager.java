@@ -62,6 +62,8 @@ public class FileParsingManager {
         return new Meeting(employeeId, requestDate, requestTime, meetingDate, meetingStartingTime, meetingEndingTime);
     }
 
+    // according to the desired output in the requirement,
+    // the office hour and meeting time should be at the same day and within 24 hours.
     private void checkTimePeriod(LocalTime start, LocalTime end, Integer duration) {
         if ((duration != null && duration > HOURS_OF_DAY) || TimeCheckingUtilities.notBefore(start, end)) {
             throw new IllegalArgumentException("The time period is not correct!");

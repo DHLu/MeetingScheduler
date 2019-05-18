@@ -20,7 +20,7 @@ public class Main {
 
         List<String> contents;
         try {
-            contents = init(args);
+            contents = readFile(args);
         } catch (IOException e) {
             System.out.println(e.getMessage());
             return;
@@ -28,9 +28,8 @@ public class Main {
 
         OfficeHour officeHour = fileParsingManager.getOfficeHour(contents.get(0));
 
-        PriorityQueue<Meeting> sortedRequest = new PriorityQueue<>(Comparator.comparing(Meeting::getRequestDateTime));
+        List<Meeting> sortedRequest = new ArrayList<>();
 
-        Map<LocalDate, PriorityQueue<Meeting>> meetings = new HashMap<>();
         for (int lineNumber = 1; lineNumber < contents.size(); lineNumber += 2) {
 
             Meeting newMeeting = fileParsingManager.getMeeting(contents.get(lineNumber), contents.get(lineNumber + 1));
@@ -42,17 +41,27 @@ public class Main {
             sortedRequest.add(newMeeting);
         }
 
+        // sort the list with earliest request at the top.
+        sortedRequest.sort(Comparator.comparing(Meeting::getRequestDateTime));
+
+        // divide the meeting by the day
+        // each day contains a list of meetings
+        Map<LocalDate, List<Meeting>> meetings = new HashMap<>();
+
         for (Meeting newMeeting : sortedRequest) {
 
-            PriorityQueue<Meeting> meetingsOfTheDay = meetings.get(newMeeting.getMeetingDate());
+            List<Meeting> meetingsOfTheDay = meetings.get(newMeeting.getMeetingDate());
 
+            // if there is no meeting at this date, directly add the meeting to the list.
             if (meetingsOfTheDay == null) {
 
-                meetingsOfTheDay = new PriorityQueue<>(Comparator.comparing(Meeting::getStartingTime));
+                meetingsOfTheDay = new ArrayList<>();
                 meetingsOfTheDay.add(newMeeting);
                 meetings.put(newMeeting.getMeetingDate(), meetingsOfTheDay);
 
             } else {
+                // if the time slot is not occupied, the meeting will be added to the list.
+
                 boolean occupied = meetingsOfTheDay.stream().anyMatch(existedMeeting -> meetingManager.isTimeSlotOccupied(existedMeeting, newMeeting));
 
                 if (!occupied) {
@@ -63,13 +72,13 @@ public class Main {
 
         meetings.keySet().stream().sorted().forEach(localDate -> {
             System.out.println(localDate);
-            PriorityQueue<Meeting> meetingsOfTheDay = meetings.get(localDate);
-            meetingsOfTheDay.forEach(System.out::println);
+            meetings.get(localDate).stream()
+                    .sorted(Comparator.comparing(Meeting::getStartingTime))
+                    .forEach(System.out::println);
         });
-
     }
 
-    private static List<String> init(String[] args) throws IOException {
+    private static List<String> readFile(String[] args) throws IOException {
 
         String filePath;
 
